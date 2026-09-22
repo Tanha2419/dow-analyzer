@@ -1,16 +1,30 @@
+# وابستگی های کامل — برای تحلیل روی کامپیوتر خودتان
+#
+# ⚠️ برای استقرار وب (رندر) از requirements-web.txt استفاده کنید.
+#    این فایل کتابخانه های سنگین دارد که سرور وب لازمشان ندارد.
+
+# ── هسته: همیشه لازم ──
 yfinance>=1.7.0
 pandas>=2.0
 numpy>=1.26
-pandas-ta>=0.4.71b0
+requests>=2.31
+flask>=3.0
+scipy>=1.10
+scikit-learn>=1.3
+pandas-datareader>=0.10
+websockets>=12.0
+
+# ── فقط تحلیل و نمودار محلی ──
+# pandas-ta و backtesting به numba وابسته اند و numba روی
+# پایتون ۳.۱۴ به بالا ساخته نمی شود. اگر نصبشان خطا داد،
+# کامنتشان کنید — داشبورد بدون آن ها کامل کار می کند و فقط
+# قابلیت بکتست غیرفعال می شود.
 matplotlib>=3.8
 seaborn>=0.13
 plotly>=5.0
-backtesting>=0.6.6
 bokeh>=3.0
 tabulate>=0.9
-flask>=3.0
-scikit-learn>=1.3
-scipy>=1.10
-websockets>=12.0
-pandas-datareader>=0.10
-# real_data.py فقط از کتابخانه استاندارد استفاده می‌کند (urllib/csv/json)
+pandas-ta>=0.4.71b0
+backtesting>=0.6.6
+
+# real_data.py فقط از کتابخانه استاندارد استفاده می کند (urllib/csv/json)

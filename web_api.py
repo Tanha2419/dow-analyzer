@@ -356,8 +356,18 @@ def backtest_payload(interval: str = "1d", cash: float = 100_000,
     موقعیت و گرد کردن تعداد سهم دقیق بماند. فقط قیمت های نمایشی
     (ورود/خروج معاملات) در ضریب مقیاس ضرب می شوند.
     """
-    from backtesting import Backtest
-    from smc_backtest import SmartMoneyStrategy, SmartMoneyLongOnly
+    # این دو فقط برای بکتست لازم اند و در استقرار وب سبک نصب
+    # نمی شوند (کتابخانه backtesting به numba وابسته است و numba
+    # روی پایتون جدید ساخته نمی شود). بکتست کار محلی است.
+    try:
+        from backtesting import Backtest
+        from smc_backtest import SmartMoneyStrategy, SmartMoneyLongOnly
+    except ImportError:
+        return dict(
+            ok=False,
+            error="بکتست در نسخه وب فعال نیست — این قابلیت را "
+                  "روی کامپیوتر خودتان اجرا کنید",
+            reason="backtesting_not_installed")
 
     _prof = A.profile(asset)
     df = fetch(interval, symbol=_prof["candle_symbol"])
