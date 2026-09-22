@@ -17,8 +17,12 @@ services:
     #                 کار ما I/O است (انتظار برای یاهو) نه CPU.
     #   timeout=120 → بعضی درخواست ها (مثل /api/plan) تا ۴۰ ثانیه
     #                 طول می کشند؛ پیش فرض ۳۰ ثانیه کم است.
+    # python -m gunicorn به جای gunicorn تنها:
+    # اگر پوشه اسکریپت ها در PATH نباشد، فراخوانی مستقیم
+    # «command not found» می دهد. اجرا به صورت ماژول این
+    # وابستگی را حذف می کند.
     startCommand: >
-      gunicorn wsgi:app
+      python -m gunicorn wsgi:app
       --bind 0.0.0.0:$PORT
       --workers 1
       --threads 4
