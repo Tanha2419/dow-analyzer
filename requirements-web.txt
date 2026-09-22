@@ -1,0 +1,18 @@
+# وابستگی های استقرار وب (رندر)
+#
+# عمدا سبک تر از requirements.txt است:
+#   حذف شده: matplotlib, seaborn, plotly, bokeh, backtesting, pandas-ta
+#   دلیل: فقط در اسکریپت های تحلیل محلی لازم اند، نه در سرور وب.
+#   با حذفشان مصرف حافظه ۱۸۱ مگابایت می ماند (سقف رایگان رندر ۵۱۲ است)
+#   و زمان ساخت هم کوتاه تر می شود.
+
+flask>=3.0
+gunicorn>=21.2
+yfinance>=1.7.0
+pandas>=2.0
+numpy>=1.26
+requests>=2.31
+scipy>=1.10
+scikit-learn>=1.3
+pandas-datareader>=0.10
+websockets>=12.0

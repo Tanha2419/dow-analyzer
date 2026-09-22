@@ -1,0 +1,49 @@
+# پیکربندی رندر — این فایل را خود رندر می خواند
+# مستندات: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: dow-analyzer
+    runtime: python
+    plan: free
+    region: oregon
+
+    buildCommand: pip install -r requirements-web.txt
+
+    # چرا این تنظیمات gunicorn:
+    #   workers=1   → سقف حافظه رایگان ۵۱۲ مگابایت است و هر ورکر
+    #                 ~۱۸۰ مگ می گیرد. دو تا جا نمی شود.
+    #   threads=4   → همزمانی را بدون مصرف حافظه بیشتر می دهد.
+    #                 کار ما I/O است (انتظار برای یاهو) نه CPU.
+    #   timeout=120 → بعضی درخواست ها (مثل /api/plan) تا ۴۰ ثانیه
+    #                 طول می کشند؛ پیش فرض ۳۰ ثانیه کم است.
+    startCommand: >
+      gunicorn wsgi:app
+      --bind 0.0.0.0:$PORT
+      --workers 1
+      --threads 4
+      --timeout 120
+      --access-logfile -
+
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      # ثبت داخل سرور خاموش است چون دیسک رندر رایگان موقتی است.
+      # ثبت دائمی کار گیت هاب اکشنز است.
+      - key: ENABLE_AUTOLOG
+        value: "0"
+
+      # کلیدهای اختیاری — در داشبورد رندر پرشان کنید.
+      # sync:false یعنی رندر مقدارشان را از این فایل نمی خواند،
+      # پس هیچ کلیدی داخل مخزن قرار نمی گیرد.
+      - key: FINNHUB_KEY
+        sync: false
+      - key: ALPHAVANTAGE_KEY
+        sync: false
+      - key: FRED_KEY
+        sync: false
