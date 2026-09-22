@@ -8,6 +8,7 @@ server.py — وب سرور داشبورد پول هوشمند داوجونز
 from __future__ import annotations
 
 import argparse
+import base64
 import os
 import traceback
 import warnings
@@ -27,6 +28,12 @@ import assets as assets_mod
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__, static_folder="static", static_url_path="")
+
+# نسخهٔ جاسازی شدهٔ ظاهر برنامه (پشتیبان). اگر این فایل نبود، اشکالی ندارد.
+try:
+    import embedded_ui as _embedded
+except Exception:
+    _embedded = None
 
 _MISSING_STATIC_HTML = """<!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8">
@@ -98,35 +105,49 @@ def api_spot():
         return jsonify(ok=False, error=str(e)), 500
 
 
-def _find_asset(name):
-    """فایل ظاهر برنامه را در چند جای ممکن می گردد.
-    این طوری کاربر می تواند index.html و edu.js را یا داخل پوشهٔ
-    static بگذارد یا مستقیم کنار بقیهٔ فایل ها — هر دو کار می کند."""
+def _serve_ui(name, mime):
+    """فایل ظاهر برنامه را از سه جا می گردد، به این ترتیب:
+      ۱. پوشهٔ static/  (حالت عادی پروژه)
+      ۲. کنار خود server.py  (اگر کاربر بدون پوشه آپلود کرده باشد)
+      ۳. نسخهٔ جاسازی شده داخل همین فایل  (تک فایلی)
+    با این کار استقرار حتی اگر هیچ فایل جانبی آپلود نشود هم کار می کند."""
     for folder in ("static", ""):
-        p = os.path.join(app.root_path, folder, name) if folder else \
-            os.path.join(app.root_path, name)
-        if os.path.exists(p):
-            return folder or ".", p
-    return None, None
+        d = os.path.join(app.root_path, folder) if folder else app.root_path
+        if os.path.exists(os.path.join(d, name)):
+            return send_from_directory(d, name, mimetype=mime)
+    if _embedded is not None:
+        blob = _embedded.get(name)
+        if blob:
+            return Response(blob, mimetype=mime)
+    return None
+
+
+def _ui_source(name):
+    """فقط برای گزارش تشخیصی: این فایل از کجا سرو می شود."""
+    for folder in ("static", ""):
+        d = os.path.join(app.root_path, folder) if folder else app.root_path
+        if os.path.exists(os.path.join(d, name)):
+            return "static/" if folder else "ریشه"
+    if _embedded is not None and _embedded.get(name):
+        return "جاسازی شده"
+    return "یافت نشد"
 
 
 @app.route("/")
 def index():
-    """صفحهٔ اصلی. فایل را هم در static/ و هم در ریشه می گردد.
-    اگر هیچ کدام نبود، به جای ۴۰۴ خام یک راهنمای فارسی نشان می دهد."""
-    folder, _ = _find_asset("index.html")
-    if folder is None:
+    """صفحهٔ اصلی."""
+    r = _serve_ui("index.html", "text/html")
+    if r is None:
         return Response(_MISSING_STATIC_HTML, mimetype="text/html"), 503
-    return send_from_directory(folder, "index.html")
+    return r
 
 
 @app.route("/edu.js")
 def edu_js():
-    """edu.js را هم از static/ و هم از ریشه سرو می کند."""
-    folder, _ = _find_asset("edu.js")
-    if folder is None:
+    r = _serve_ui("edu.js", "application/javascript")
+    if r is None:
         return Response("// edu.js یافت نشد", mimetype="application/javascript"), 404
-    return send_from_directory(folder, "edu.js", mimetype="application/javascript")
+    return r
 
 
 @app.route("/api/files")
@@ -151,6 +172,9 @@ def api_files():
         static_files=stat_files,
         index_html=os.path.exists(os.path.join(sdir, "index.html")),
         edu_js=os.path.exists(os.path.join(sdir, "edu.js")),
+        embedded_available=_embedded is not None,
+        index_source=_ui_source("index.html"),
+        edu_source=_ui_source("edu.js"),
         py_count=sum(1 for f in top if f.endswith(".py")),
         top_level=top,
     )
